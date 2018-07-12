@@ -1,13 +1,11 @@
 ---
 layout: post
-title:  "DEEPL Classification"
+title:  "Text Classification in Data Analysis Platform DEEP"
 date:   2018-07-12 15:22:59 +0545
-categories: jekyll update
+categories: deep nlp
 ---
-
-## Text Classification in Data Analysis Platform DEEP
 ### About DEEP
-...
+The DEEP is an online platform for secondary data analysis, supporting analysts from different parts of the world to address scope and scale of crisis happening around. The data analysis focuses on the living status of affected people and the underlying factors that affect people. Also, the platform helps to know the existing information gaps regarding sectors, geographical areas and affected groups.
 
 ### Requirement for Natural Language Processing
 There are a lots of documents and reports being added in DEEP everyday and there are many analysts who are tagging the documents and texts into different sectors and categories. This is a time consuming process and something that can be automated. This is where Natural Language Processing comes in as a mechanism for automated text classification which is really going to help the analysts.
@@ -23,7 +21,7 @@ It is one of the most simple classifiers in use. Although simple, we chose it fo
 
 ### Dataset and Pre-processing
 The source for our training data is the DEEP database where information collected and added by analysts are stored. Since the database consisted of a bit complex format for storing information, we needed to pre-process the data. A csv sample of data extracted:
-```csv
+```
 count,onedim_j,twodim_j,reliability,severity,demo_groups_j,specific_needs_j,aff_groups_j,geo_j,info_date,excerpt,has_image,lead_text,lead_id,lead_url,event
 1,"{""Population Profile"": [""Demographic Profile""]}",null,Usually,Situation of Concern,"[""Children (5 to 11 years old)""]",null,"[""Affected""]",null,2016-11-15,"894,057 children are among the 2.1 million affected people",True,None,4,http://reliefweb.int/sites/reliefweb.int/files/resources/SITREP%2014%20-%20HAITI%20%2821%20OCT%202016%29_0.pdf,Test Event
 2,null,"[{""sector"": ""Nutrition"", ""subsectors"": [""Breastfeeding""], ""pillar"": ""Humanitarian conditions"", ""subpillar"": ""2nd level outcome""}]",Usually,Severe Conditions,"[""Infants/toddlers (< 5 years old)""]",null,"[""Affected""]",null,2016-11-15,"112,500 children under five are at risk of acute malnutrition.",True,None,4,http://reliefweb.int/sites/reliefweb.int/files/resources/SITREP%2014%20-%20HAITI%20%2821%20OCT%202016%29_0.pdf,Test Event
@@ -151,16 +149,23 @@ def compose(*functions):
 ```
 
 ### Using NLTK's Naive Bayes Classifier
-NLTK provides a very easy to use Naive Bayes Classifier. The input to the classifier is a list of tuples each consisting of text features and label. Text features in our case(and in most of the cases) is the dict containing unique words and their counts. The simplifed code is:
+NLTK provides a very easy to use Naive Bayes Classifier. The input to the classifier is a list of tuples each consisting of text features and label. Text features in our case(and in most of the cases) is a dict containing unique words and their counts. The simplifed code is:
 ```python
 import random
+import nltk
 
 def get_features(processed_text):
     return {x: 1 for x in processed_text.split()}
 
 def create_classifier(labeled_data):
-    """labeled_data is [(text, label), ...]
+    """ labeled_data is [(text, label), ...] """
     labeled_features = [(get_features(x), y) for x, y in labeled_data]
     random.shuffle(labeled_features)
     test, train = labeled_features[500:], labeled_features[:500]
+    classifier = nltk.NaiveBayesClassifier.train(train)
+    return classifier  # now use as classifier.classify(<text>)
 ```
+Although, this is a very easy way to create a classifier, creating a model for around 10,000 training data took quite a lot of memory and cpu consumption, and ran for around 15-20 minutes in a moderate machine. And the worst part was the accuracy being very small(just around 52%) than what we had hoped.
+
+### Switching to scikit-learn's Naive Bayes Classifier
+Going through scikit-learn's documentation on classification we tried it's Naive Bayes Classifier. ...
