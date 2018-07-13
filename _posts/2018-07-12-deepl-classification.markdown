@@ -165,7 +165,59 @@ def create_classifier(labeled_data):
     classifier = nltk.NaiveBayesClassifier.train(train)
     return classifier  # now use as classifier.classify(<text>)
 ```
-Although, this is a very easy way to create a classifier, creating a model for around 10,000 training data took quite a lot of memory and cpu consumption, and ran for around 15-20 minutes in a moderate machine. And the worst part was the accuracy being very small(just around 52%) than what we had hoped.
+Although, this is a very easy way to create a classifier, creating a model for around 10,000 training data took quite a lot of memory and cpu consumption, and ran for around 15-20 minutes in a moderate machine. And the worst part was the accuracy being very small(just around 52%) than what we had hoped. The following graph shows accuracy values for different data sizes.
+
+{% include image.html file="size_vs_accuracy_1.png" description="Size vs Accuracy plot for the first Classifier Model(using nltk)" %}  
 
 ### Switching to scikit-learn's Naive Bayes Classifier
-Going through scikit-learn's documentation on classification we tried it's Naive Bayes Classifier. ...
+Scikit-Learn is also one of the most popular and excellent libraries for machine learning. Using Naive Bayes Classifier is not as straightforward as using that of NLTK, but it's just a couple of lines of code. Simplified code for the classifier is shown below.
+```python
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfTransformer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.pipeline import Pipeline
+import numpy as np
+
+def create_classifier(training_data):
+    """training_data is list of tuples: [(text, label), ...]"""
+    classifier = Pipeline([
+        ('vect', CountVectorizer(ngram_range=(1, 2))),
+        ('tfidf', TfidfTransformer(use_idf=False)),
+        ('clf', MultinomialNB(alpha=0.01, fit_prior=False))
+    ])
+    train, target = zip(*train_labeled)
+    classifier = classifier.fit(train, target)
+    return classifier
+
+def calculate_accuracy(classifier, test_data):
+    """test_data: [(text, label), ...]"""
+    test, test_target = zip(*test_data)
+    predicted = classifier.predict(test)
+    return np.mean(predicted == test_target)
+```
+
+But to our astonishment, the training speed was insanely fast, compared to the last one. It just took about 1 minute to train. And the best part was the accuracy coming to be higher than that from NLTK. The model was 68% accurate. 
+
+With some tuning and refining, we got it upto 71%. This accuracy is not a very good one. But it's not bad either. And we think the model is usable right away. The following graph shows accuracy values for different data sizes.
+
+{% include image.html file="size_vs_accuracy_2.png" description="Size vs Accuracy plot for the second Classifier Model(using scikit-learn)" %}  
+
+
+### Now with even larger dataset
+As we had been working on the models and experimenting on them, more and more data were being added to DEEP. We have collected the new data and now we are with a dataset double the size of what we had previously. There are nearly 40,000 rows.  
+
+However, upon training the model with the dataset, the accuracy decreased instead of increasing. We just got around **65%** accurate results. Generally, larger dataset means better accuracy, which was not true in our case. 
+
+
+### Analyzing the Results
+The initial accuracy was the worst(with nltk), which increased significantly with the second model(with sklearn) and with more dataset, the accuracy decreased slightly. Carefully looking at the confusion matrices and the dataset samples, we found the following reasons for overall accuracy not being so good and the accuracy degrading with increase in dataset:
+- There are 12 classes that we have to classify texts over. Some of them were similar with each other. This overlapping of the classes resulted in a lot of the test predictions to fail.
+- The analysts are allowed to tag multiple classes for a text. Thus, the dataset has multiple labels for same text as well. But, the classifier model predicts only one class for a text.
+- We have done enough preprocessing and text translation for non-english texts as well. So maybe, Naive Bayes classifier model is not suiting our purpose well.
+
+
+### Road Ahead
+There's always a room for enhancemend no matter how good things are. With our moderately accurate text classifier, we have plenty of room for improvement and a lot of things to try, which are summarized below:
+- First thing, we have a problem with our dataset: multiple labels assigned to a single text. We should either modify our classifier to predict muitiple classes or limit our dataset to have single label for a text.
+- There are a lot of advanced classifier models, one of them being SVM which is a binary classifier. We can use "one vs. all" classification method to fit our purpose for multi-class classification.
+- Maybe, we can merge similar labels into one label so that we have non overalapping classes.
